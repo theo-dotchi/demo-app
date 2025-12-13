@@ -10,9 +10,7 @@
 name: 'Dependency review'
 on:
   pull_request:
-    branches: [ "main", "demo-training" ]
-  push:
-    branches: [ "demo-training" ]
+    branches: [ "main", "demo-training", "solution" ]
 
 # If using a dependency submission action in this workflow this permission will need to be set to:
 #
