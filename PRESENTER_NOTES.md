@@ -179,32 +179,15 @@ Then on GitHub:
 
 ## Act 6: Ask Copilot to Explain the Failure (2-3 min)
 
-**Open GitHub Copilot Chat (in VS Code or web):**
+**In VS Code / Terminal:**
 
-1. Click the **Copilot** button in GitHub (or `Ctrl+Shift+/` in VS Code)
-2. Ask:
-   > "Why did the Dependency Review workflow fail? What does it check?"
-
-**Copilot response will explain:**
-- Dependency Review scans changes in the PR (new and updated dependencies)
-- Checks against GitHub's vulnerability database
-- Fails if high-severity issues are found
-
-**Optional follow-up to Copilot:**
-> "Why doesn't Dependency Review catch all the issues that `npm audit` would show?"
-
-**Explanation:**
-> "Good question! Dependency Review only scans dependencies **changed in the PR** — not the entire dependency tree. So if your `main` branch already has old vulnerabilities, Dependency Review won't flag them. `npm audit` checks everything. That's why you'd run `npm audit` locally during development, and Dependency Review as a safety net on PRs."
-
-**Then fix locally:**
-
-1. In terminal (on `feature-update` branch):
-   ```bash
-   npm install minimist@1.2.8
-   git add package.json package-lock.json
-   git commit -m "fix: update minimist to safe version"
-   git push
-   ```
+Update the dependency to a safe version:
+```bash
+npm install minimist@1.2.8
+git add package.json package-lock.json
+git commit -m "fix: update minimist to safe version"
+git push
+```
 
 2. The PR auto-updates, workflows re-run
 
@@ -218,55 +201,50 @@ Then on GitHub:
 
 ---
 
-## Act 7: Deploy with Azure Static Web Apps (Optional / Time Permitting)
+## Act 7: Deploy (Optional / Time Permitting)
 
-**If time allows (5-10 min):**
+**If time allows:**
 
-Use the Azure Static Web Apps Marketplace workflow for a pre-configured deployment.
+Create the Azure deployment workflow manually:
 
-**Steps:**
-1. Merge the PR into `main` first (green checkmarks = safe to merge)
-   - Click **Merge pull request** on GitHub
-   - Confirm merge
+**Add file:** `.github/workflows/azure-deploy.yml`
 
-2. **Check existing Azure secret:**
-   - Go to **Settings** → **Secrets and variables** → **Actions**
-   - You should see a secret like `AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_PEBBLE_054BD1210`
-   - This was automatically created when Azure Static Web App was set up
-   - Copy the exact secret name (you'll need it in step 6)
+```yaml
+name: Deploy to Azure
 
-3. Go to **Actions** → **New workflow**
+on:
+  push:
+    branches: [ main ]
 
-4. Search: `azure static`
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-5. Find **"Deploy web app to Azure Static Web Apps"** (by Microsoft Azure) and click **Configure**
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-6. The workflow template auto-generates. **Before committing, update these values:**
-   - Change `APP_ARTIFACT_LOCATION: "build"` to `"dist"` (Vite uses `dist` folder)
-   - Optionally remove `API_LOCATION: "api"` line (we don't have an API)
-   - Update `AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}` to use your actual secret name:
-     ```yaml
-     AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_PEBBLE_054BD1210 }}
-     ```
+      - name: Build
+        run: npm ci && npm run build
 
-7. Commit the workflow with the message: `"ci: add Azure Static Web Apps deployment"`
+      - name: Deploy to Azure
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_PEBBLE_054BD1210 }}
+          action: "upload"
+          app_location: "/"
+          output_location: "dist"
+```
 
 **Explain:**
-> "This Marketplace workflow is production-ready. It handles build and deployment automatically, creates preview environments for every PR, and even adds PR comments with preview URLs. Notice it has two jobs: one for building and deploying, another for cleanup when PRs close. The workflow uses environment variables for configuration, making it easy to adapt to different projects. We just needed to change the output location from 'build' to 'dist' for Vite."
+> "This workflow automatically deploys our built app to Azure Static Web Apps whenever we push to the main branch. The secret token is stored securely in GitHub and used during deployment."
 
-**Key features to highlight:**
-- Runs on push to `main` (production deploy) and PRs (preview environments)
-- Automatically builds your app using the Azure action (no manual `npm ci` needed)
-- PR comments with preview URLs
-- Cleanup job when PRs close
-
-**Show the deployment running:**
-1. Refresh **Actions** tab
-2. Watch the new "Azure Static Web Apps" workflow execute
-3. Once complete, you'll have a live URL for the deployed app
-
-**Say:**
-> "Our app is now live on Azure — automatically tested, reviewed, and deployed. From code to production in seconds, all driven by GitHub Actions workflows."
+**Push and show the deployment workflow running.**
 
 ---
 
