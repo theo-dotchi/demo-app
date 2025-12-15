@@ -36,8 +36,8 @@ This is a training/interview demo showing GitHub Actions for CI/CD automation. T
 name: CI
 
 on:
-  push:
   pull_request:
+    branches: [ main ]
 
 jobs:
   test:
@@ -170,6 +170,16 @@ git push
 
 **In VS Code / Terminal:**
 
+**Ask Copilot to explain the failure:**
+- Open the failed Dependency Review workflow run and copy the advisory text.
+- In Copilot Chat, ask: "Explain why this workflow failed and how to fix it." 
+- Copilot responds with guidance to upgrade `minimist` (e.g., `>=1.2.6`) and suggests running `npm audit` to check for additional issues.
+
+**Note to audience (why only `minimist` was flagged):**
+- Dependency Review scans changes in the PR and flags vulnerabilities introduced by the dependencies you added or updated.
+- It does not report existing or unrelated transitive/dev vulnerabilities that were already in the base branch.
+- `npm audit` reports all known issues in the whole dependency tree (including dev and transitive), which is why it may show more findings than Dependency Review.
+
 Update the dependency to a safe version:
 ```bash
 npm install minimist@1.2.8
@@ -190,50 +200,32 @@ git push
 
 ---
 
-## Act 7: Deploy (Optional / Time Permitting)
+## Act 7: Deploy via Marketplace (Optional / Time Permitting)
 
-**If time allows:**
+**Goal:** Use the official Marketplace template instead of writing YAML by hand.
 
-Create the Azure deployment workflow manually:
+**Steps (in GitHub UI):**
+1. Go to the **Actions** tab → Click **New workflow**.
+2. Search for and select: **Azure Static Web Apps** (by Microsoft).
+3. Click **Configure**.
+4. In the generated workflow form, set:
+   - App location: `/`
+   - API location: leave blank (not using an API)
+   - Output location: `dist`
+5. Ensure the workflow targets your deploy branch (usually `main`).
+6. If the repo isn’t already connected from the Azure portal, add the required secret:
+   - `AZURE_STATIC_WEB_APPS_API_TOKEN` (or the resource-specific token Azure creates automatically for the Static Web App).
+7. Commit the generated workflow (filename will look like `azure-static-web-apps-<suffix>.yml`).
 
-**Add file:** `.github/workflows/azure-deploy.yml`
+**What this template does:**
+- Uses `Azure/static-web-apps-deploy@v1` with Azure’s integrated build (no manual `npm ci`/`npm run build` steps needed).
+- On pull requests to `main`, it creates a preview environment and tears it down on PR close.
+- On push to `main`, it builds and deploys to production.
 
-```yaml
-name: Deploy to Azure
+**Say:**
+> "Using the Marketplace template is faster and includes best practices like preview environments. When I push to `main`, it builds and deploys automatically using the repo secret."
 
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Build
-        run: npm ci && npm run build
-
-      - name: Deploy to Azure
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_PEBBLE_054BD1210 }}
-          action: "upload"
-          app_location: "/"
-          output_location: "dist"
-```
-
-**Explain:**
-> "This workflow automatically deploys our built app to Azure Static Web Apps whenever we push to the main branch. The secret token is stored securely in GitHub and used during deployment."
-
-**Push and show the deployment workflow running.**
+**Trigger it:** Merge your PR to `main` (or push to `main`) and watch the **Azure Static Web Apps** workflow run.
 
 ---
 
