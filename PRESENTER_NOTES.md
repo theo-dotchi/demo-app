@@ -229,17 +229,26 @@ Use the Azure Static Web Apps Marketplace workflow for a pre-configured deployme
    - Click **Merge pull request** on GitHub
    - Confirm merge
 
-2. Go to **Actions** → **New workflow**
+2. **Set up the Azure deployment token in GitHub Secrets:**
+   - Go to your Azure Static Web App in the Azure Portal
+   - Click **Manage deployment token** and copy the token
+   - In GitHub repo: **Settings** → **Secrets and variables** → **Actions**
+   - Click **New repository secret**
+   - Name: `AZURE_STATIC_WEB_APPS_API_TOKEN`
+   - Paste the Azure deployment token
+   - Click **Add secret**
 
-3. Search: `azure static`
+3. Go to **Actions** → **New workflow**
 
-4. Find **"Deploy web app to Azure Static Web Apps"** (by Microsoft Azure) and click **Configure**
+4. Search: `azure static`
 
-5. The workflow template auto-generates. **Before committing, update these environment variables:**
+5. Find **"Deploy web app to Azure Static Web Apps"** (by Microsoft Azure) and click **Configure**
+
+6. The workflow template auto-generates. **Before committing, update these environment variables:**
    - Change `APP_ARTIFACT_LOCATION: "build"` to `"dist"` (Vite uses `dist` folder)
    - Optionally remove `API_LOCATION: "api"` line (we don't have an API)
 
-6. Commit the workflow with the message: `"ci: add Azure Static Web Apps deployment"`
+7. Commit the workflow with the message: `"ci: add Azure Static Web Apps deployment"`
 
 **Explain:**
 > "This Marketplace workflow is production-ready. It handles build and deployment automatically, creates preview environments for every PR, and even adds PR comments with preview URLs. Notice it has two jobs: one for building and deploying, another for cleanup when PRs close. The workflow uses environment variables for configuration, making it easy to adapt to different projects. We just needed to change the output location from 'build' to 'dist' for Vite."
