@@ -231,9 +231,9 @@ Use the Azure Static Web Apps Marketplace workflow for a pre-configured deployme
 
 2. Go to **Actions** → **New workflow**
 
-3. Search: `Azure Static Web Apps`
+3. Search: `azure static`
 
-4. Find **"Azure Static Web Apps"** (by Microsoft) and click **Configure**
+4. Find **"Deploy web app to Azure Static Web Apps"** (by Microsoft Azure) and click **Configure**
 
 5. The workflow template auto-generates. Review it:
    ```yaml
