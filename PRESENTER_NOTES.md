@@ -78,7 +78,7 @@ Open https://github.com/actions/checkout in a new tab for 10 seconds, then go ba
 - Commit directly to `main`
 
 **Say:**
-> "Now every push will automatically run tests. Let's add one more workflow using the Marketplace."
+> "Now every pull request will automatically run tests. This prevents broken code from being merged. Let's add one more workflow using the Marketplace."
 
 ---
 
@@ -124,61 +124,62 @@ jobs:
 
 ---
 
-## Act 4: Push Code Changes (2-3 min)
+## Act 4: Create a Pull Request (2-3 min)
 
-**In VS Code (or terminal):**
+**In GitHub or terminal:**
 
-Show that you've already:
-1. Added a new dependency: `minimist@0.0.8` (intentionally risky version)
-2. Made a small code change (e.g., added a feature)
+You've already prepared a `feature-update` branch with:
+1. Updated `package.json` to add `minimist@0.0.8` (intentionally risky version)
+2. Updated `src/ui/App.tsx` with celebration section:
+   ```tsx
+   <section className="celebration">
+     <span className="fireworks">🎆✨🎇</span>
+     <h2>Congrats, we automatically tested and deployed our app on Azure !</h2>
+     <span className="fireworks">🎇✨🎆</span>
+   </section>
+   ```
 
-**Run:**
+**Create the PR:**
 ```bash
-git add .
-git commit -m "feat: add feature with new dependency"
-git push
+# Push feature-update branch (already done)
+git push origin feature-update
 ```
 
+Then on GitHub:
+1. Click **Compare & Pull Request** (or go to Pull requests → New)
+2. Title: `"feat: add celebration message and new dependency"`
+3. Base: `main` ← Compare: `feature-update`
+4. Click **Create Pull Request**
+
 **Say:**
-> "Now I'm pushing a change that adds a dependency with known vulnerabilities. Watch what happens when this triggers the workflows..."
+> "Now I'm opening a pull request that adds a feature with a dependency that has known vulnerabilities. Watch what happens — the workflows will automatically check our code before it can be merged."
 
 ---
 
-## Act 5: Watch Workflows Run (5-10 min)
+## Act 5: Watch Workflows Run on PR (5-10 min)
 
-**Go back to GitHub:**
-1. Refresh the repo
-2. You should see a new commit on `main`
-3. Click **Actions** tab
-4. Watch both workflows execute (~30-60 seconds)
+**Go back to the GitHub PR page:**
+1. Scroll down in the PR description
+2. You should see a "Checks" section with workflow runs (~30-60 seconds to start)
+3. Click **Details** to see logs
 
 **Explain what's happening:**
-- **CI workflow:** ✅ **Passes** — Tests are green
+- **CI workflow:** ✅ **Passes** — Tests run and pass
 - **Dependency Review:** ❌ **Fails** — Detects minimist@0.0.8 vulnerability
 
 **Show the failure details:**
-1. Click the failed **Dependency Review** run
+1. Click the failed **Dependency Review** check
 2. Expand the logs
-3. Read the advisory message explaining why it failed
+3. Read the advisory message explaining the vulnerability in minimist 0.0.8
 
 **Say:**
-> "The workflow detected a known high-severity vulnerability in minimist 0.0.8. This is exactly what we want — automation catching security issues before they go live."
+> "The PR-triggered workflows immediately caught a high-severity vulnerability in our new dependency. This is exactly what we want — automation preventing insecure code from being merged into production. Developers get instant feedback without waiting for manual review."
 
 ---
 
-## Act 6: Fix and Re-run (3-5 min)
+## Act 6: Ask Copilot to Explain the Failure (2-3 min)
 
 **In VS Code / Terminal:**
-
-**Ask Copilot to explain the failure:**
-- Open the failed Dependency Review workflow run and copy the advisory text.
-- In Copilot Chat, ask: "Explain why this workflow failed and how to fix it." 
-- Copilot responds with guidance to upgrade `minimist` (e.g., `>=1.2.6`) and suggests running `npm audit` to check for additional issues.
-
-**Note to audience (why only `minimist` was flagged):**
-- Dependency Review scans changes in the PR and flags vulnerabilities introduced by the dependencies you added or updated.
-- It does not report existing or unrelated transitive/dev vulnerabilities that were already in the base branch.
-- `npm audit` reports all known issues in the whole dependency tree (including dev and transitive), which is why it may show more findings than Dependency Review.
 
 Update the dependency to a safe version:
 ```bash
@@ -188,44 +189,62 @@ git commit -m "fix: update minimist to safe version"
 git push
 ```
 
-**Say:**
-> "Now let's fix the vulnerability and push again. The workflow will automatically re-run."
+2. The PR auto-updates, workflows re-run
 
 **Watch it turn green:**
-1. Go back to **Actions** tab
-2. Watch the new run (CI passes again, Dependency Review now passes ✅)
+1. Go back to PR page
+2. Refresh and wait for new workflow runs (~30-60 sec)
+3. Both CI ✅ and Dependency Review ✅ now pass
 
 **Say:**
-> "Both workflows are now green. Everything is clean. If this were production, we could now safely merge and deploy."
+> "Now that we've fixed the vulnerability, the workflows are green. The PR is safe to merge. This is the full automation loop — detect, fix, verify, merge."
 
 ---
 
-## Act 7: Deploy via Marketplace (Optional / Time Permitting)
+## Act 7: Deploy (Optional / Time Permitting)
 
-**Goal:** Use the official Marketplace template instead of writing YAML by hand.
+**If time allows:**
 
-**Steps (in GitHub UI):**
-1. Go to the **Actions** tab → Click **New workflow**.
-2. Search for and select: **Azure Static Web Apps** (by Microsoft).
-3. Click **Configure**.
-4. In the generated workflow form, set:
-   - App location: `/`
-   - API location: leave blank (not using an API)
-   - Output location: `dist`
-5. Ensure the workflow targets your deploy branch (usually `main`).
-6. If the repo isn’t already connected from the Azure portal, add the required secret:
-   - `AZURE_STATIC_WEB_APPS_API_TOKEN` (or the resource-specific token Azure creates automatically for the Static Web App).
-7. Commit the generated workflow (filename will look like `azure-static-web-apps-<suffix>.yml`).
+Create the Azure deployment workflow manually:
 
-**What this template does:**
-- Uses `Azure/static-web-apps-deploy@v1` with Azure’s integrated build (no manual `npm ci`/`npm run build` steps needed).
-- On pull requests to `main`, it creates a preview environment and tears it down on PR close.
-- On push to `main`, it builds and deploys to production.
+**Add file:** `.github/workflows/azure-deploy.yml`
 
-**Say:**
-> "Using the Marketplace template is faster and includes best practices like preview environments. When I push to `main`, it builds and deploys automatically using the repo secret."
+```yaml
+name: Deploy to Azure
 
-**Trigger it:** Merge your PR to `main` (or push to `main`) and watch the **Azure Static Web Apps** workflow run.
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Build
+        run: npm ci && npm run build
+
+      - name: Deploy to Azure
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_PEBBLE_054BD1210 }}
+          action: "upload"
+          app_location: "/"
+          output_location: "dist"
+```
+
+**Explain:**
+> "This workflow automatically deploys our built app to Azure Static Web Apps whenever we push to the main branch. The secret token is stored securely in GitHub and used during deployment."
+
+**Push and show the deployment workflow running.**
 
 ---
 
