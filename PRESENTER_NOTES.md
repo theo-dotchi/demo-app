@@ -36,7 +36,6 @@ This is a training/interview demo showing GitHub Actions for CI/CD automation. T
 name: CI
 
 on:
-  push:
   pull_request:
 
 jobs:
