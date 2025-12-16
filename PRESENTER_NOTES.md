@@ -248,13 +248,23 @@ Use the Azure Static Web Apps Marketplace workflow for a pre-configured deployme
      ```yaml
      AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_PEBBLE_054BD1210 }}
      ```
+   - **Add job dependency for safety** (production-grade pattern): Add `needs: [ci, dependency-review]` to the deploy job:
+     ```yaml
+     jobs:
+       build_and_deploy_job:
+         needs: [ci, dependency-review]  # Only deploy if checks passed
+         runs-on: ubuntu-latest
+         ...
+     ```
+     This ensures deployment only happens if CI tests pass **and** Dependency Review has no blockers.
 
-7. Commit the workflow with the message: `"ci: add Azure Static Web Apps deployment"`
+7. Commit the workflow with the message: `"ci: add Azure Static Web Apps deployment with check gating"`
 
 **Explain:**
-> "This Marketplace workflow is production-ready. It handles build and deployment automatically, creates preview environments for every PR, and even adds PR comments with preview URLs. Notice it has two jobs: one for building and deploying, another for cleanup when PRs close. The workflow uses environment variables for configuration, making it easy to adapt to different projects. We just needed to change the output location from 'build' to 'dist' for Vite."
+> "This Marketplace workflow is production-ready. It handles build and deployment automatically, creates preview environments for every PR, and even adds PR comments with preview URLs. Notice we added a job dependency with `needs: [ci, dependency-review]` — this is a safety gate that prevents deployment if any checks fail. This is a production-grade pattern: never deploy broken or vulnerable code. The workflow uses environment variables for configuration, making it easy to adapt to different projects. We just needed to change the output location from 'build' to 'dist' for Vite."
 
 **Key features to highlight:**
+- Job dependencies (`needs`) ensure deployment only happens after security and quality checks pass
 - Runs on push to `main` (production deploy) and PRs (preview environments)
 - Automatically builds your app using the Azure action (no manual `npm ci` needed)
 - PR comments with preview URLs
