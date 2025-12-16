@@ -6,7 +6,7 @@ export function App() {
     { label: 'Add Dependency Review (Marketplace)', done: false },
     { label: 'Open PR to trigger checks', done: false },
     { label: 'Debug + rerun workflow', done: false },
-    { label: '(Bonus) Deploy to Azure', done: false },
+    { label: '(Bonus) Push and watch automation', done: false },
     { label: 'Push and watch automation', done: false },
   ]);
 
@@ -39,7 +39,7 @@ export function App() {
 
       <section className="celebration">
         <span className="fireworks">✨</span>
-        <h2>All checks passed — your app is live on Azure.</h2>
+        <h2>All checks passed, our app is live on Azure.</h2>
         <span className="fireworks">✨</span>
       </section>
 
