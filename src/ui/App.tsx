@@ -36,6 +36,13 @@ export function App() {
           ))}
         </ul>
       </section>
+
+      <section className="celebration">
+        <span className="fireworks">✨</span>
+        <h2>All checks passed, our app is live on Azure.</h2>
+        <span className="fireworks">✨</span>
+      </section>
+
       <footer>
         <small>Built with Vite + React • Tests via Vitest</small>
       </footer>
